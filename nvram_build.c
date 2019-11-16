@@ -25,10 +25,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+
+#include "getopt.h"
 
 // File format
 #define FMT_NVRAM		0
@@ -125,8 +127,8 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 		fprintf( stderr, "build_file: No input file given\n" );
 		return -1;
 	}
-	
-	FILE *f = fopen( filename, "rb" );
+
+	FILE *f = fopen( filename, "r" );
 	if ( !f )
 	{
 		int code = errno;
@@ -141,6 +143,9 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 	// easier to code than trying to read chunks from a file and deal with split lines and such.
 	static char buffer[128*1024 + 1];
 	size_t bytes_read = fread( buffer, sizeof (char), 128*1024+1, f );
+
+        buffer[bytes_read] = 0;
+
 	if ( bytes_read <= ( 128*1024 ) )
 	{
 		// Got a complete file
@@ -182,7 +187,7 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 		if ( !p_equals )
 		{
 			// Error, no equals sign on the line
-			fprintf( stderr, "build_file: Line %d: missing equals sign\n", filename, line_number );
+			fprintf( stderr, "%s: Line %d: missing equals sign\n", filename, line_number );
 			p_start = p_newline + 1;
 			continue;
 		}
@@ -197,7 +202,7 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 		// Sanity checks.
 		if ( strlen( name ) == 0 )
 		{
-			fprintf( stderr, "build_file: Line %d: name is empty\n", filename, line_number );
+			fprintf( stderr, "%s: Line %d: name is empty\n", filename, line_number );
 			continue;
 		}
 		// Unescape our name and value.
@@ -205,21 +210,21 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 		sts = unescape_string( name, r_name );
 		if ( sts != 0 )
 		{
-			fprintf( stderr, "build_file: Line %d: problem unescaping name\n",
+			fprintf( stderr, "%s: Line %d: problem unescaping name\n",
 					 filename, line_number );
 			continue;
 		}
 		sts = unescape_string( value, r_value );
 		if ( sts != 0 )
 		{
-			fprintf( stderr, "build_file: Line %d: problem unescaping value\n",
+			fprintf( stderr, "%s: Line %d: problem unescaping value\n",
 					 filename, line_number );
 			continue;
 		}
 		// And use the unescaped forms after this
 		name = r_name;
 		value = r_value;
-		
+
 		// Now to convert the name and value into a record.
 		int record_len = 0;
 		int len = strlen( name ) & 0xFF; // Only 1 byte for the name length
@@ -249,7 +254,7 @@ int build_file( FILE *output_file, int file_format, const char *filename )
 		size_t bytes_written = fwrite( output_buffer, sizeof (char), record_len, output_file );
 		if ( bytes_written != record_len )
 		{
-			fprintf( stderr, "build_file: Line %d: error writing record %d\n",
+			fprintf( stderr, "%s: Line %d: error writing record %d\n",
 					 filename, line_number, record_count+1 );
 			return -1;
 		}
@@ -331,7 +336,7 @@ int main( int argc, char **argv )
 	int file_format = FMT_NVRAM;
 
 	memset( output_filename, 0, 65541 );
-	
+
 	// Check our arguments for options, and for at least one filename after
 	// the options.
 	int opt;

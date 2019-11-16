@@ -1,0 +1,3 @@
+:
+cc nvram_dump.c -o nvram_dump
+cc nvram_build.c -o nvram_build

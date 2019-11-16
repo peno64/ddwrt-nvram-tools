@@ -30,10 +30,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+
+#include "getopt.h"
 
 // Output string escaping mode
 #define ESC_FULL   0
@@ -108,7 +110,7 @@ int dump_file( int escape_mode, int file_format, const char *filename )
 		fprintf( stderr, "dump_file: No filename given\n" );
 		return 1;
 	}
-	
+
 	FILE *f = fopen( filename, "rb" );
 	if ( !f )
 	{
@@ -240,7 +242,7 @@ int main( int argc, char **argv )
 {
 	int escape = ESC_FULL;
 	int file_format = FMT_NVRAM;
-	
+
 	// Check our arguments for options, and for at least one filename after
 	// the options.
 	int opt;
